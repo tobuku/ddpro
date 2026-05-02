@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "ddPro",
+    "slug": "ddpro",
+    "version": "1.0.0",
+    "scheme": "ddpro",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#475569"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.tobuku.ddpro"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#475569"
+      },
+      "package": "com.tobuku.ddpro"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
