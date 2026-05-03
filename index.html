@@ -3,111 +3,156 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ddPro — Real Estate Risk Analysis</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>ddPro — Real Estate Due Diligence</title>
+  <meta name="description" content="Instant risk analysis for homebuyers and investors. Know what you're buying before you make an offer." />
   <link rel="stylesheet" href="style.css" />
 </head>
-<body class="bg-gray-950 text-gray-100 min-h-screen">
+<body>
 
-  <!-- Header -->
-  <header class="border-b border-gray-800 bg-gray-900">
-    <div class="max-w-[860px] mx-auto px-6 py-5 flex items-center gap-3">
-      <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-sm">dd</div>
-      <div>
-        <span class="text-xl font-bold tracking-tight">ddPro</span>
-        <span class="ml-3 text-gray-400 text-sm">Real Estate Risk Analysis</span>
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo-mark">dd</div>
+      <div class="logo-group">
+        <span class="logo-text">ddPro</span>
+        <span class="logo-sub">Real Estate Due Diligence</span>
       </div>
     </div>
   </header>
 
-  <main class="max-w-[860px] mx-auto px-6 py-12">
+  <main>
 
-    <!-- Input Section -->
-    <section id="input-section">
-      <h1 class="text-3xl font-bold mb-2">Analyze a Property</h1>
-      <p class="text-gray-400 mb-8">Enter a full property address to get an instant risk score across market, location, and property factors.</p>
-
-      <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
-        <label for="address-input" class="block text-sm font-medium text-gray-300 mb-2">Property Address</label>
-        <div class="flex gap-3">
-          <input
-            id="address-input"
-            type="text"
-            placeholder="123 Main St, Honolulu, HI"
-            class="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
-          />
-          <button
-            id="analyze-btn"
-            class="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-6 py-3 rounded-lg transition whitespace-nowrap"
-            onclick="handleAnalyze()"
-          >
-            Analyze Property
-          </button>
-        </div>
-        <p id="error-msg" class="mt-3 text-red-400 text-sm hidden"></p>
+    <!-- Input -->
+    <section class="input-card" id="input-section">
+      <h1>Know what you're buying before you offer.</h1>
+      <p>Enter a full property address to get an instant risk assessment across market conditions, location factors, and property fundamentals.</p>
+      <div class="input-row">
+        <input
+          id="address-input"
+          type="text"
+          class="address-input"
+          placeholder="123 Main St, Honolulu, HI 96813"
+          autocomplete="street-address"
+        />
+        <button id="analyze-btn" class="analyze-btn" onclick="handleAnalyze()">Analyze Property</button>
       </div>
+      <p id="error-msg" class="error-msg"></p>
     </section>
 
-    <!-- Loading State -->
-    <section id="loading-section" class="hidden mt-12 text-center">
-      <div class="spinner mx-auto mb-4"></div>
-      <p class="text-gray-400">Analyzing property...</p>
-    </section>
+    <!-- Loading -->
+    <div id="loading-section" class="loading-section">
+      <div class="spinner"></div>
+      <p>Running due diligence analysis...</p>
+    </div>
 
-    <!-- Results Section -->
-    <section id="results-section" class="hidden results-fade-in mt-10 space-y-6">
+    <!-- Results -->
+    <section id="results-section" class="results-section">
 
-      <!-- Risk Score Card -->
-      <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
-        <div class="flex items-start justify-between mb-4">
-          <div>
-            <p class="text-sm text-gray-400 mb-1">Overall Risk Score</p>
-            <div class="flex items-end gap-3">
-              <span id="score-number" class="text-6xl font-bold"></span>
-              <span class="text-gray-400 text-lg mb-2">/ 100</span>
+      <!-- Overall Score -->
+      <div class="score-card">
+        <div class="gauge-wrap" id="gauge-container"></div>
+        <div class="score-meta">
+          <div class="score-meta-label">Overall Risk Score</div>
+          <span id="score-badge" class="risk-badge"></span>
+          <p id="analyzed-address" class="analyzed-address"></p>
+          <hr class="meta-divider" />
+          <p id="score-description" class="score-description"></p>
+          <div class="score-bar-section">
+            <div class="score-bar-bg">
+              <div id="score-bar-fill" class="score-bar-fill"></div>
+              <div class="bar-tick" style="left:25%"></div>
+              <div class="bar-tick" style="left:50%"></div>
+              <div class="bar-tick" style="left:75%"></div>
             </div>
-            <p id="analyzed-address" class="text-gray-400 text-sm mt-1"></p>
+            <div class="bar-tick-labels">
+              <span>0</span><span>25</span><span>50</span><span>75</span><span>100</span>
+            </div>
           </div>
-          <span id="score-badge" class="px-3 py-1 rounded-full text-sm font-semibold"></span>
         </div>
-        <div class="w-full bg-gray-800 rounded-full h-3 mb-3">
-          <div id="score-bar" class="h-3 rounded-full transition-all duration-700"></div>
-        </div>
-        <p id="score-description" class="text-gray-300 text-sm"></p>
       </div>
 
       <!-- Score Legend -->
-      <div class="flex gap-4 text-sm">
-        <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span><span class="text-gray-400">75–100 Low Risk</span></div>
-        <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-yellow-500 inline-block"></span><span class="text-gray-400">50–74 Medium Risk</span></div>
-        <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-red-500 inline-block"></span><span class="text-gray-400">0–49 High Risk</span></div>
+      <div class="score-legend">
+        <div class="legend-item">
+          <span class="legend-dot" style="background:#22c55e"></span>
+          <span class="legend-range">75&ndash;100</span>
+          <span class="legend-text">Low Risk &mdash; proceed with standard contingencies</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot" style="background:#eab308"></span>
+          <span class="legend-range">50&ndash;74</span>
+          <span class="legend-text">Medium Risk &mdash; request additional seller disclosures</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot" style="background:#ef4444"></span>
+          <span class="legend-range">0&ndash;49</span>
+          <span class="legend-text">High Risk &mdash; commission inspections before offering</span>
+        </div>
       </div>
 
       <!-- Category Breakdown -->
-      <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
-        <h2 class="text-lg font-semibold mb-5">Category Breakdown</h2>
-        <div id="categories-list" class="space-y-5"></div>
+      <div class="section-header">
+        <span class="section-label">Category Breakdown</span>
+        <span class="section-sub">Three dimensions of due diligence</span>
       </div>
+      <div id="categories-grid" class="categories-grid"></div>
 
       <!-- Risk Factors -->
-      <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
-        <h2 class="text-lg font-semibold mb-5">Risk Factors</h2>
-        <div id="factors-list" class="space-y-4"></div>
+      <div class="factors-card">
+        <div class="factors-card-header">
+          <span>Risk Factor Detail</span>
+          <span class="factors-card-sub">Individual metrics scored 0&ndash;100</span>
+        </div>
+        <table class="factors-table">
+          <thead>
+            <tr>
+              <th>Factor</th>
+              <th>Score</th>
+              <th class="col-num">Value</th>
+              <th>Rating</th>
+            </tr>
+          </thead>
+          <tbody id="factors-tbody"></tbody>
+        </table>
       </div>
 
-      <!-- Demo Disclaimer + Reset -->
-      <div class="bg-gray-800/50 border border-gray-700 rounded-lg px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <p class="text-gray-400 text-sm">Scores are simulated demo data. Real data integrations coming soon.</p>
-        <button
-          onclick="resetForm()"
-          class="bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition whitespace-nowrap"
-        >
-          Analyze Another Property
-        </button>
+      <!-- Due Diligence Action Guide -->
+      <div class="dd-guide">
+        <div class="dd-guide-header">What your score means before making an offer</div>
+        <table class="dd-guide-table">
+          <thead>
+            <tr>
+              <th>Score</th>
+              <th>Risk Level</th>
+              <th>Recommended Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="dd-range" style="color:#22c55e">75 &ndash; 100</td>
+              <td><span class="risk-badge" style="color:#22c55e;background:rgba(34,197,94,0.1)">Low Risk</span></td>
+              <td class="dd-action">Strong fundamentals across all categories. Proceed to offer stage with standard inspection and financing contingencies.</td>
+            </tr>
+            <tr>
+              <td class="dd-range" style="color:#eab308">50 &ndash; 74</td>
+              <td><span class="risk-badge" style="color:#eab308;background:rgba(234,179,8,0.1)">Medium Risk</span></td>
+              <td class="dd-action">Mixed signals detected. Request full seller disclosures, review HOA documents, and verify flood and fire zone status before submitting an offer.</td>
+            </tr>
+            <tr>
+              <td class="dd-range" style="color:#ef4444">0 &ndash; 49</td>
+              <td><span class="risk-badge" style="color:#ef4444;background:rgba(239,68,68,0.1)">High Risk</span></td>
+              <td class="dd-action">Significant concerns identified. Commission a professional inspection, title search, and environmental review before proceeding. Consider walking away if multiple categories score below 50.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Footer / Reset -->
+      <div class="page-footer">
+        <p>Scores are simulated demo data. Real integrations (ATTOM, FEMA, MLS) coming soon.</p>
+        <button class="reset-btn" onclick="resetForm()">Analyze Another Property</button>
       </div>
 
     </section>
-
   </main>
 
   <script src="app.js"></script>
