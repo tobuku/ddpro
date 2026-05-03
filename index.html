@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ddPro — Real Estate Due Diligence</title>
   <meta name="description" content="Instant risk analysis for homebuyers and investors. Know what you're buying before you make an offer." />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -21,140 +22,169 @@
 
   <main>
 
-    <!-- Input -->
-    <section class="input-card" id="input-section">
-      <h1>Know what you're buying before you offer.</h1>
-      <p>Enter a full property address to get an instant risk assessment across market conditions, location factors, and property fundamentals.</p>
-      <div class="input-row">
-        <input
-          id="address-input"
-          type="text"
-          class="address-input"
-          placeholder="123 Main St, Honolulu, HI 96813"
-          autocomplete="street-address"
-        />
-        <button id="analyze-btn" class="analyze-btn" onclick="handleAnalyze()">Analyze Property</button>
-      </div>
-      <p id="error-msg" class="error-msg"></p>
-    </section>
+    <!-- Two-column grid: results left, search right -->
+    <div class="main-grid">
 
-    <!-- Loading -->
-    <div id="loading-section" class="loading-section">
-      <div class="spinner"></div>
-      <p>Running due diligence analysis...</p>
-    </div>
+      <!-- LEFT — results column -->
+      <div class="left-col">
 
-    <!-- Results -->
-    <section id="results-section" class="results-section">
+        <!-- Hero placeholder (shown before first search) -->
+        <div id="hero-placeholder" class="hero-placeholder">
+          <p class="hero-eyebrow">What you get instantly</p>
+          <h1>Know before you offer.</h1>
+          <p class="hero-sub">Enter any property address on the right for a full due diligence snapshot across three risk dimensions.</p>
+          <ul class="hero-list">
+            <li>Overall risk score (0 &ndash; 100)</li>
+            <li>Market conditions &amp; price trend analysis</li>
+            <li>Location risk: flood zone, crime, schools</li>
+            <li>Property fundamentals &amp; title flags</li>
+            <li>Interactive property map</li>
+            <li>Action guide: what to do before making an offer</li>
+          </ul>
+        </div>
 
-      <!-- Overall Score -->
-      <div class="score-card">
-        <div class="gauge-wrap" id="gauge-container"></div>
-        <div class="score-meta">
-          <div class="score-meta-label">Overall Risk Score</div>
-          <span id="score-badge" class="risk-badge"></span>
-          <p id="analyzed-address" class="analyzed-address"></p>
-          <hr class="meta-divider" />
-          <p id="score-description" class="score-description"></p>
-          <div class="score-bar-section">
-            <div class="score-bar-bg">
-              <div id="score-bar-fill" class="score-bar-fill"></div>
-              <div class="bar-tick" style="left:25%"></div>
-              <div class="bar-tick" style="left:50%"></div>
-              <div class="bar-tick" style="left:75%"></div>
-            </div>
-            <div class="bar-tick-labels">
-              <span>0</span><span>25</span><span>50</span><span>75</span><span>100</span>
+        <!-- Loading indicator -->
+        <div id="loading-indicator" class="loading-indicator">
+          <div class="spinner"></div>
+          <p>Running due diligence analysis...</p>
+        </div>
+
+        <!-- Results -->
+        <section id="results-section" class="results-section">
+
+          <!-- Score card -->
+          <div class="score-card">
+            <div class="gauge-wrap" id="gauge-container"></div>
+            <div class="score-meta">
+              <div class="score-meta-label">Overall Risk Score</div>
+              <span id="score-badge" class="risk-badge"></span>
+              <p id="analyzed-address" class="analyzed-address"></p>
+              <hr class="meta-divider" />
+              <p id="score-description" class="score-description"></p>
             </div>
           </div>
+
+          <!-- Category cards — 3 squares -->
+          <div id="categories-grid" class="categories-grid"></div>
+
+          <!-- Risk factors table -->
+          <div class="factors-card">
+            <div class="factors-card-header">
+              <span>Risk Factor Detail</span>
+              <span class="factors-card-sub">Individual metrics scored 0 &ndash; 100</span>
+            </div>
+            <table class="factors-table">
+              <thead>
+                <tr>
+                  <th>Factor</th>
+                  <th>Score</th>
+                  <th class="col-num">Value</th>
+                  <th>Rating</th>
+                </tr>
+              </thead>
+              <tbody id="factors-tbody"></tbody>
+            </table>
+          </div>
+
+        </section>
+      </div><!-- /left-col -->
+
+      <!-- RIGHT — search column -->
+      <div class="right-col">
+
+        <!-- Search card (square) -->
+        <div class="search-card">
+          <p class="search-card-eyebrow">Property address</p>
+          <h2 class="search-card-title">Analyze a property before you offer.</h2>
+          <div class="search-input-wrap">
+            <input
+              id="address-input"
+              type="text"
+              class="address-input"
+              placeholder="123 Main St, Honolulu, HI"
+              autocomplete="street-address"
+            />
+          </div>
+          <button id="analyze-btn" class="analyze-btn" onclick="handleAnalyze()">
+            Analyze Property
+          </button>
+          <p class="search-hint">Include city and state for best results.</p>
         </div>
-      </div>
+        <p id="error-msg" class="error-msg"></p>
 
-      <!-- Score Legend -->
-      <div class="score-legend">
-        <div class="legend-item">
-          <span class="legend-dot" style="background:#22c55e"></span>
-          <span class="legend-range">75&ndash;100</span>
-          <span class="legend-text">Low Risk &mdash; proceed with standard contingencies</span>
+        <!-- Score legend (shown always, compact) -->
+        <div class="score-legend">
+          <div class="legend-row">
+            <span class="legend-dot" style="background:#15803d"></span>
+            <span class="legend-range">75 – 100</span>
+            <span class="legend-text">Low Risk</span>
+          </div>
+          <div class="legend-row">
+            <span class="legend-dot" style="background:#b45309"></span>
+            <span class="legend-range">50 – 74</span>
+            <span class="legend-text">Medium Risk</span>
+          </div>
+          <div class="legend-row">
+            <span class="legend-dot" style="background:#b91c1c"></span>
+            <span class="legend-range">0 – 49</span>
+            <span class="legend-text">High Risk</span>
+          </div>
         </div>
-        <div class="legend-item">
-          <span class="legend-dot" style="background:#eab308"></span>
-          <span class="legend-range">50&ndash;74</span>
-          <span class="legend-text">Medium Risk &mdash; request additional seller disclosures</span>
-        </div>
-        <div class="legend-item">
-          <span class="legend-dot" style="background:#ef4444"></span>
-          <span class="legend-range">0&ndash;49</span>
-          <span class="legend-text">High Risk &mdash; commission inspections before offering</span>
-        </div>
-      </div>
 
-      <!-- Category Breakdown -->
-      <div class="section-header">
-        <span class="section-label">Category Breakdown</span>
-        <span class="section-sub">Three dimensions of due diligence</span>
-      </div>
-      <div id="categories-grid" class="categories-grid"></div>
+      </div><!-- /right-col -->
 
-      <!-- Risk Factors -->
-      <div class="factors-card">
-        <div class="factors-card-header">
-          <span>Risk Factor Detail</span>
-          <span class="factors-card-sub">Individual metrics scored 0&ndash;100</span>
-        </div>
-        <table class="factors-table">
-          <thead>
-            <tr>
-              <th>Factor</th>
-              <th>Score</th>
-              <th class="col-num">Value</th>
-              <th>Rating</th>
-            </tr>
-          </thead>
-          <tbody id="factors-tbody"></tbody>
-        </table>
-      </div>
+    </div><!-- /main-grid -->
 
-      <!-- Due Diligence Action Guide -->
-      <div class="dd-guide">
-        <div class="dd-guide-header">What your score means before making an offer</div>
-        <table class="dd-guide-table">
-          <thead>
-            <tr>
-              <th>Score</th>
-              <th>Risk Level</th>
-              <th>Recommended Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="dd-range" style="color:#22c55e">75 &ndash; 100</td>
-              <td><span class="risk-badge" style="color:#22c55e;background:rgba(34,197,94,0.1)">Low Risk</span></td>
-              <td class="dd-action">Strong fundamentals across all categories. Proceed to offer stage with standard inspection and financing contingencies.</td>
-            </tr>
-            <tr>
-              <td class="dd-range" style="color:#eab308">50 &ndash; 74</td>
-              <td><span class="risk-badge" style="color:#eab308;background:rgba(234,179,8,0.1)">Medium Risk</span></td>
-              <td class="dd-action">Mixed signals detected. Request full seller disclosures, review HOA documents, and verify flood and fire zone status before submitting an offer.</td>
-            </tr>
-            <tr>
-              <td class="dd-range" style="color:#ef4444">0 &ndash; 49</td>
-              <td><span class="risk-badge" style="color:#ef4444;background:rgba(239,68,68,0.1)">High Risk</span></td>
-              <td class="dd-action">Significant concerns identified. Commission a professional inspection, title search, and environmental review before proceeding. Consider walking away if multiple categories score below 50.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+    <!-- BELOW FOLD — Due Diligence Action Guide -->
+    <div id="dd-guide" class="dd-guide hidden">
+      <div class="dd-guide-header">What your score means before making an offer</div>
+      <table class="dd-guide-table">
+        <thead>
+          <tr>
+            <th>Score</th>
+            <th>Risk Level</th>
+            <th>Recommended Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="dd-range" style="color:#15803d">75 – 100</td>
+            <td><span class="risk-badge" style="color:#15803d;background:rgba(21,128,61,0.09);">Low Risk</span></td>
+            <td class="dd-action">Strong fundamentals across all categories. Proceed to offer stage with standard inspection and financing contingencies.</td>
+          </tr>
+          <tr>
+            <td class="dd-range" style="color:#b45309">50 – 74</td>
+            <td><span class="risk-badge" style="color:#b45309;background:rgba(180,83,9,0.09);">Medium Risk</span></td>
+            <td class="dd-action">Mixed signals detected. Request full seller disclosures, review HOA documents, and verify flood and fire zone status before submitting an offer.</td>
+          </tr>
+          <tr>
+            <td class="dd-range" style="color:#b91c1c">0 – 49</td>
+            <td><span class="risk-badge" style="color:#b91c1c;background:rgba(185,28,28,0.09);">High Risk</span></td>
+            <td class="dd-action">Significant concerns identified. Commission a professional inspection, title search, and environmental review. Consider walking away if multiple categories score below 50.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
-      <!-- Footer / Reset -->
-      <div class="page-footer">
-        <p>Scores are simulated demo data. Real integrations (ATTOM, FEMA, MLS) coming soon.</p>
-        <button class="reset-btn" onclick="resetForm()">Analyze Another Property</button>
+    <!-- BELOW FOLD — Property Map -->
+    <div id="map-section" class="map-section hidden">
+      <div class="map-header">
+        <span class="section-label">Property Location</span>
+        <span id="map-address-label" class="map-address-label"></span>
       </div>
+      <div id="map" class="map-container"></div>
+      <p class="map-credit">Map data &copy; OpenStreetMap contributors. Geocoding by Nominatim.</p>
+    </div>
 
-    </section>
+    <!-- Footer -->
+    <div id="page-footer" class="page-footer hidden">
+      <p>Scores are simulated demo data. Real integrations (ATTOM, FEMA, MLS) coming soon.</p>
+      <button class="reset-btn" onclick="resetForm()">Analyze Another Property</button>
+    </div>
+
   </main>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
