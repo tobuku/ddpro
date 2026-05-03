@@ -354,27 +354,27 @@ function renderDetailSections(r) {
 function computeRedFlags(r) {
   const flags = [];
   if (r.foundCond.includes('cracks'))
-    flags.push({ sev: 5, title: 'Foundation: Structural Concerns', detail: 'Structural cracks detected. A licensed structural engineer report is required before making any offer.' });
+    flags.push({ sev: 5, title: 'Foundation: Structural Concerns', detail: 'Structural cracks detected. A licensed structural engineer report is required before making any offer.', link: 'https://www.ashi.org/', linkLabel: 'Find a home inspector (ASHI)' });
   if (!r.titleClear)
-    flags.push({ sev: 5, title: 'Title: Ownership Dispute Risk', detail: 'Potential disputes found in public record. A title search is required before submitting any offer.' });
+    flags.push({ sev: 5, title: 'Title: Ownership Dispute Risk', detail: 'Potential disputes found in public record. A title search is required before submitting any offer.', link: 'https://www.alta.org/', linkLabel: 'About title insurance (ALTA)' });
   if (r.lienStatus.includes('Possible lien'))
-    flags.push({ sev: 4, title: 'Possible Lien on Title', detail: r.lienStatus + ' Liens transfer to new owner at closing — verify with your title company before offer.' });
+    flags.push({ sev: 4, title: 'Possible Lien on Title', detail: r.lienStatus + ' Liens transfer to new owner at closing — verify with your title company before offer.', link: 'https://www.alta.org/', linkLabel: 'About title insurance (ALTA)' });
   if (r.roofLife < 5)
-    flags.push({ sev: 4, title: 'Roof End-of-Life', detail: `Roof at ${r.roofAge} yrs (${r.roofMat}) with ~${r.roofLife} yr remaining. Budget $12,000–$25,000 for replacement or negotiate a closing credit.` });
+    flags.push({ sev: 4, title: 'Roof End-of-Life', detail: `Roof at ${r.roofAge} yrs (${r.roofMat}) with ~${r.roofLife} yr remaining. Budget $12,000–$25,000 for replacement or negotiate a closing credit.`, link: 'https://www.nrca.net/', linkLabel: 'Roofing guidance (NRCA)' });
   if (r.wiringType.includes('Aluminum'))
-    flags.push({ sev: 3, title: 'Aluminum Wiring Detected', detail: 'Pre-1972 aluminum wiring is a known fire risk. Verify condition with a licensed electrician and confirm insurance eligibility before offer.' });
+    flags.push({ sev: 3, title: 'Aluminum Wiring Detected', detail: 'Pre-1972 aluminum wiring is a known fire risk. Verify condition with a licensed electrician and confirm insurance eligibility before offer.', link: 'https://www.cpsc.gov/', linkLabel: 'CPSC safety guidance' });
   if (r.floodReq)
-    flags.push({ sev: 3, title: 'Flood Zone — Insurance Required', detail: `${r.floodZone}. Mandatory flood insurance adds an estimated $${r.annFloodIns.toLocaleString()}/yr. Confirm full cost with your lender before committing.` });
+    flags.push({ sev: 3, title: 'Flood Zone — Insurance Required', detail: `${r.floodZone}. Mandatory flood insurance adds an estimated $${r.annFloodIns.toLocaleString()}/yr. Confirm full cost with your lender before committing.`, link: 'https://msc.fema.gov/portal/home', linkLabel: 'Check flood map (FEMA)' });
   if (r.permitNote.includes('Verify'))
-    flags.push({ sev: 3, title: 'Permit History Unclear', detail: 'Possible unpermitted additions. Verify all structures with the county permit database — buyers inherit unpermitted work liability.' });
+    flags.push({ sev: 3, title: 'Permit History Unclear', detail: 'Possible unpermitted additions. Verify all structures with the county permit database — buyers inherit unpermitted work liability.', link: 'https://www.hud.gov/topics/buying_a_home', linkLabel: 'HUD buyer guidance' });
   if (r.appreciation > 40)
-    flags.push({ sev: 2, title: `Price Up ${r.appreciation}% Since ${r.priorSaleYr}`, detail: 'Significant appreciation may reflect run-up above current value. Verify pricing against 3 recently closed comps within 0.5 miles before offering.' });
+    flags.push({ sev: 2, title: `Price Up ${r.appreciation}% Since ${r.priorSaleYr}`, detail: 'Significant appreciation may reflect run-up above current value. Verify pricing against 3 recently closed comps within 0.5 miles before offering.', link: 'https://www.redfin.com/', linkLabel: 'Check comps on Redfin' });
   if (r.hvacAge > 15)
-    flags.push({ sev: 2, title: `HVAC System: ${r.hvacAge} Years Old`, detail: `Past typical service life of 15 years. Budget $8,000–$15,000 for replacement or negotiate a closing credit.` });
+    flags.push({ sev: 2, title: `HVAC System: ${r.hvacAge} Years Old`, detail: `Past typical service life of 15 years. Budget $8,000–$15,000 for replacement or negotiate a closing credit.`, link: 'https://www.energystar.gov/products/heating_cooling', linkLabel: 'HVAC guidance (Energy Star)' });
   if (r.crimeIndex.includes('Above average'))
-    flags.push({ sev: 2, title: 'Above-Average Crime Index', detail: 'Crime is above city average for this location. Verify current conditions with the local police district before offer.' });
+    flags.push({ sev: 2, title: 'Above-Average Crime Index', detail: 'Crime is above city average for this location. Verify current conditions with the local police district before offer.', link: 'https://www.crimemapping.com/', linkLabel: 'Check crime map' });
   if (r.hasHOA && r.hoaDues > 600)
-    flags.push({ sev: 1, title: `High HOA: $${r.hoaDues}/mo`, detail: 'HOA dues above $600/mo meaningfully reduce the buyer pool and long-term resale demand. Factor into exit strategy.' });
+    flags.push({ sev: 1, title: `High HOA: $${r.hoaDues}/mo`, detail: 'HOA dues above $600/mo meaningfully reduce the buyer pool and long-term resale demand. Factor into exit strategy.', link: 'https://www.caionline.org/', linkLabel: 'HOA guidance (CAI)' });
   return flags.sort((a, b) => b.sev - a.sev).slice(0, 3);
 }
 
@@ -629,7 +629,7 @@ function renderResults(data, address) {
   if (flags.length === 0) {
     rfEl.innerHTML = `<div class="green-flags-banner"><span class="gf-label">No Critical Concerns Identified</span><span class="gf-text">This property scored well across all major risk categories. Standard contingencies and a full inspection still apply.</span></div>`;
   } else {
-    rfEl.innerHTML = `<div class="red-flags-banner"><div class="rf-head"><span class="rf-label">Top ${flags.length} Concern${flags.length > 1 ? 's' : ''} — Verify Before Offering</span><span class="rf-sub">These findings require action before you submit an offer</span></div><div class="rf-items">${flags.map((f, i) => `<div class="rf-item"><span class="rf-num">${i + 1}</span><div class="rf-body"><span class="rf-title">${escHtml(f.title)}</span><span class="rf-detail">${escHtml(f.detail)}</span></div></div>`).join('')}</div></div>`;
+    rfEl.innerHTML = `<div class="red-flags-banner"><div class="rf-head"><span class="rf-label">Top ${flags.length} Concern${flags.length > 1 ? 's' : ''} — Verify Before Offering</span><span class="rf-sub">These findings require action before you submit an offer</span></div><div class="rf-items">${flags.map((f, i) => `<div class="rf-item"><span class="rf-num">${i + 1}</span><div class="rf-body"><span class="rf-title">${escHtml(f.title)}</span><span class="rf-detail">${escHtml(f.detail)}</span>${f.link ? `<a class="rf-link" href="${f.link}" target="_blank" rel="noopener noreferrer">${escHtml(f.linkLabel || 'Learn more')} &#x2192;</a>` : ''}</div></div>`).join('')}</div></div>`;
   }
 
   // Score card
