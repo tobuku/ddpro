@@ -324,7 +324,25 @@ function renderDetailSections(r) {
 
     section('Location &amp; Neighborhood', [
       row('School district rating',                r.schoolRating + ' / 10 (estimated) — verify at GreatSchools.org', r.schoolRating >= 7 ? 'ok' : r.schoolRating >= 5 ? 'info' : 'warn'),
-      row('Walkability score',                     r.walkScore + ' / 100', r.walkScore >= 65 ? 'ok' : r.walkScore >= 40 ? 'info' : 'warn'),
+      row('Walkability score',
+        r.hasRealWalkData
+          ? r.walkScore + ' / 100 — real data via OpenStreetMap'
+          : r.walkScore + ' / 100 — estimated',
+        r.walkScore >= 65 ? 'ok' : r.walkScore >= 40 ? 'info' : 'warn'),
+      row('Transit score',
+        r.hasRealWalkData
+          ? r.transitScore + ' / 100 — ' + (r.osmCounts.transit || 0) + ' transit stops within 0.5 mi'
+          : 'Estimated — verify with local transit authority',
+        r.hasRealWalkData ? (r.transitScore >= 50 ? 'ok' : r.transitScore >= 25 ? 'info' : 'warn') : 'info'),
+      r.hasRealWalkData ? row('Nearby amenities (0.5 mi)',
+        [
+          ((r.osmCounts.grocery||0)+(r.osmCounts.conv||0)) > 0 ? ((r.osmCounts.grocery||0)+(r.osmCounts.conv||0)) + ' grocery / convenience' : '',
+          (r.osmCounts.food||0)     > 0 ? (r.osmCounts.food)     + ' restaurants &amp; cafes' : '',
+          (r.osmCounts.pharmacy||0) > 0 ? (r.osmCounts.pharmacy) + ' pharmacies' : '',
+          (r.osmCounts.park||0)     > 0 ? (r.osmCounts.park)     + ' parks' : '',
+          (r.osmCounts.school||0)   > 0 ? (r.osmCounts.school)   + ' schools' : '',
+        ].filter(Boolean).join(' · ') || 'No amenities mapped in this radius — may be rural or data gap',
+        'info') : '',
       row('Hospital / ER distance',               r.hospDist + ' miles to nearest emergency room', r.hospDist <= 3 ? 'ok' : 'info'),
       row('Commute to employment centers',         r.commuteMins + ' min estimated to nearest major job center', r.commuteMins <= 25 ? 'ok' : r.commuteMins <= 45 ? 'info' : 'warn'),
       row('Internet service options',              r.internet, 'ok'),
@@ -575,6 +593,54 @@ async function analyzeProperty(address) {
 }
 
 // ============================================================
+// Walkability — OpenStreetMap Overpass API (no key required)
+// ============================================================
+
+function calcOsmScores(elements) {
+  const t = (e, key, vals) => vals.includes(e.tags?.[key]);
+  const grocery   = elements.filter(e => t(e,'shop',['supermarket','grocery'])).length;
+  const conv      = elements.filter(e => t(e,'shop',['convenience'])).length;
+  const food      = elements.filter(e => t(e,'amenity',['restaurant','fast_food','cafe','bar','pub'])).length;
+  const transit   = elements.filter(e => t(e,'highway',['bus_stop']) || t(e,'railway',['station','subway_entrance','tram_stop','halt'])).length;
+  const school    = elements.filter(e => t(e,'amenity',['school','university','college','kindergarten'])).length;
+  const pharmacy  = elements.filter(e => t(e,'amenity',['pharmacy'])).length;
+  const park      = elements.filter(e => t(e,'leisure',['park','playground','nature_reserve'])).length;
+
+  let ws = 0;
+  ws += Math.min(28, grocery * 20 + conv * 5);
+  ws += Math.min(22, food    * 2);
+  ws += Math.min(20, transit * 7);
+  ws += Math.min(12, school  * 6);
+  ws += Math.min(10, pharmacy * 8);
+  ws += Math.min(8,  park    * 4);
+  return {
+    walkScore:    Math.min(100, Math.round(ws)),
+    transitScore: Math.min(100, transit * 13),
+    counts: { grocery, conv, food, transit, school, pharmacy, park },
+  };
+}
+
+async function fetchWalkabilityData(lat, lon) {
+  try {
+    const r = 800; // metres — ~10 min walk
+    const q = `[out:json][timeout:15];
+(
+  node["shop"~"supermarket|grocery|convenience"](around:${r},${lat},${lon});
+  node["amenity"~"restaurant|fast_food|cafe|bar|pub"](around:${r},${lat},${lon});
+  node["highway"="bus_stop"](around:${r},${lat},${lon});
+  node["railway"~"station|subway_entrance|tram_stop|halt"](around:${r},${lat},${lon});
+  node["amenity"~"school|university|college|kindergarten"](around:${r},${lat},${lon});
+  node["amenity"="pharmacy"](around:${r},${lat},${lon});
+  node["leisure"~"park|playground|nature_reserve"](around:${r},${lat},${lon});
+);
+out tags;`;
+    const res  = await fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: q });
+    const data = await res.json();
+    return calcOsmScores(data.elements || []);
+  } catch { return {}; }
+}
+
+// ============================================================
 // Map
 // ============================================================
 
@@ -611,9 +677,17 @@ function renderMap(lat, lon, address) {
 // Render all results
 // ============================================================
 
-function renderResults(data, address) {
+function renderResults(data, address, walkData = {}) {
   const sc = scoreColor(data.riskScore);
   const r  = generateReport(data, address);
+
+  // Overlay real walkability data from OpenStreetMap
+  if (walkData.walkScore !== undefined) {
+    r.walkScore      = walkData.walkScore;
+    r.transitScore   = walkData.transitScore || 0;
+    r.osmCounts      = walkData.counts || {};
+    r.hasRealWalkData = true;
+  }
 
   // Update URL for sharing (pre-fills address on reload)
   currentAddress = address;
@@ -714,7 +788,8 @@ async function handleAnalyze() {
 
   try {
     const [data, coords] = await Promise.all([analyzeProperty(address), geocodeAddress(address)]);
-    renderResults(data, address);
+    const walkData = coords ? await fetchWalkabilityData(coords.lat, coords.lon) : {};
+    renderResults(data, address, walkData);
     if (coords) renderMap(coords.lat, coords.lon, address);
   } catch (err) {
     document.getElementById('pre-search').classList.remove('hidden');
