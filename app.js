@@ -212,15 +212,16 @@ function generateReport(data, address) {
 
 function renderMetricsStrip(r) {
   const tiles = [
-    { label: 'Est. Market Value',  value: r.fmtPrice,                          sub: 'comparative estimate' },
-    { label: 'Total Monthly Cost', value: '$' + r.moTotal.toLocaleString(),    sub: 'mortgage+tax+ins+util' },
-    { label: 'Days on Market',     value: r.dom + ' days',                     sub: 'for current conditions' },
+    { label: 'Est. Market Value',  value: r.fmtPrice,                                 sub: 'comparative estimate' },
+    { label: 'Total Monthly Cost', value: '$' + r.moTotal.toLocaleString(),           sub: 'mortgage+tax+ins+util' },
+    { label: 'Days on Market',     value: r.dom + ' days',                            sub: 'est. for this market' },
     { label: 'Flood Zone',         value: r.floodZone.split(' ').slice(0,2).join(' '), sub: r.floodReq ? 'Ins. required' : 'Standard coverage' },
-    { label: 'School District',    value: r.schoolRating + ' / 10',            sub: 'estimated rating' },
+    { label: 'School District',    value: r.schoolRating + ' / 10',                   sub: 'estimated rating' },
   ];
-  return '<div class="metrics-strip">' + tiles.map(t =>
+  // Return inner HTML only — container #metrics-strip stays in place
+  return tiles.map(t =>
     `<div class="metric-tile"><span class="metric-label">${t.label}</span><span class="metric-value">${t.value}</span><span class="metric-sub">${t.sub}</span></div>`
-  ).join('') + '</div>';
+  ).join('');
 }
 
 // ============================================================
@@ -455,6 +456,7 @@ function renderActionGuide(score) {
     ? ['Request full seller disclosures before writing an offer.','Verify flood zone and insurance requirements with your lender.','Review HOA docs if applicable — financials, rules, and minutes.','Order inspection with sewer scope and roof specialist.','Negotiate inspection repairs or price reduction based on findings.']
     : ['Commission professional inspection before making any offer.','Order title search — liens and disputes possible at this score.','Get structural engineer evaluation if foundation concerns exist.','Verify all permit history with county — look for unpermitted work.','Consider walking away if two or more categories score below 50.'];
 
+  document.getElementById('buyer-checklist').classList.add('hidden');
   document.getElementById('action-guide').classList.remove('hidden');
   document.getElementById('ag-body').innerHTML = steps.map((s,i) =>
     `<div class="ag-step"><span class="ag-num">${i+1}</span><span>${s}</span></div>`
@@ -552,6 +554,11 @@ function renderMap(lat, lon, address) {
     maxZoom: 19,
   }).addTo(mapInstance);
   L.marker([lat, lon]).addTo(mapInstance).bindPopup(`<strong>${address}</strong>`).openPopup();
+
+  // Show coordinates in map header
+  const coords = document.getElementById('map-coords');
+  if (coords) coords.textContent = `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+
   setTimeout(() => mapInstance.invalidateSize(), 150);
 }
 
@@ -572,8 +579,13 @@ function renderResults(data, address) {
   document.getElementById('analyzed-address').textContent  = address;
   document.getElementById('score-description').textContent = data.description || '';
 
-  // Metrics strip
-  document.getElementById('metrics-strip').outerHTML = renderMetricsStrip(r);
+  // Score bar
+  const fill = document.getElementById('score-bar-fill');
+  fill.style.width      = `${data.riskScore}%`;
+  fill.style.background = sc.hex;
+
+  // Metrics strip (innerHTML — keeps element ID intact for repeat searches)
+  document.getElementById('metrics-strip').innerHTML = renderMetricsStrip(r);
 
   // Category cards
   const grid = document.getElementById('categories-grid');
@@ -620,7 +632,7 @@ function renderResults(data, address) {
   // Action guide (right col)
   renderActionGuide(data.riskScore);
 
-  // Show
+  // Show results, hide pre-search
   document.getElementById('pre-search').classList.add('hidden');
   document.getElementById('results-section').classList.add('visible');
   document.getElementById('page-footer').classList.remove('hidden');
@@ -661,6 +673,7 @@ function resetForm() {
   document.getElementById('map-section').classList.add('hidden');
   document.getElementById('page-footer').classList.add('hidden');
   document.getElementById('action-guide').classList.add('hidden');
+  document.getElementById('buyer-checklist').classList.remove('hidden');
   clearError();
   document.getElementById('address-input').focus();
   window.scrollTo({ top: 0, behavior: 'smooth' });

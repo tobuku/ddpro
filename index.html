@@ -104,6 +104,15 @@
               <p id="analyzed-address" class="analyzed-address"></p>
               <hr class="meta-divider" />
               <p id="score-description" class="score-description"></p>
+              <div class="score-bar-row">
+                <div class="score-bar-bg">
+                  <div id="score-bar-fill" class="score-bar-fill"></div>
+                  <div class="bar-tick" style="left:25%"></div>
+                  <div class="bar-tick" style="left:50%"></div>
+                  <div class="bar-tick" style="left:75%"></div>
+                </div>
+                <div class="bar-labels"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
+              </div>
             </div>
           </div>
 
@@ -177,9 +186,26 @@
           </div>
         </div>
 
-        <!-- Right column below-fold content (shown after search) -->
+        <!-- Pre-search: buyer checklist (fills right col below legend) -->
+        <div id="buyer-checklist" class="buyer-checklist">
+          <div class="bc-head">Before You Offer — Must Verify</div>
+          <ul class="bc-list">
+            <li>Get pre-approved for financing</li>
+            <li>Confirm flood zone &amp; insurance cost</li>
+            <li>Review all seller disclosures</li>
+            <li>Order full inspection w/ sewer scope</li>
+            <li>Verify permits — no open violations</li>
+            <li>Request 12 months of utility bills</li>
+            <li>Review HOA docs &amp; reserve fund</li>
+            <li>Run title search for liens</li>
+            <li>Compare 3 recent closed comps</li>
+            <li>Confirm school district boundaries</li>
+          </ul>
+        </div>
+
+        <!-- Post-search: action guide (replaces checklist) -->
         <div id="action-guide" class="action-guide hidden">
-          <div class="ag-head">Next Steps</div>
+          <div class="ag-head">Next Steps for This Property</div>
           <div id="ag-body" class="ag-body"></div>
         </div>
 
@@ -192,6 +218,7 @@
       <div class="map-header">
         <span class="section-label">Property Location</span>
         <span id="map-address-label" class="map-address-label"></span>
+        <span id="map-coords" class="map-coords"></span>
       </div>
       <div id="map" class="map-container"></div>
       <p class="map-credit">Map &copy; OpenStreetMap contributors. Geocoding by Nominatim.</p>
