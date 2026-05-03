@@ -17,7 +17,7 @@
         <span class="logo-text">ddPro</span>
         <span class="logo-sub">Real Estate Due Diligence</span>
       </div>
-      <div class="header-tag">200+ checks · Every property · Instant</div>
+      <div class="header-tag">Your top risks · Every property · Free</div>
     </div>
   </header>
 
@@ -31,9 +31,9 @@
         <div id="pre-search" class="pre-search">
 
           <div class="hero-card">
-            <p class="hero-eyebrow">The complete buyer checklist</p>
-            <h1>Most buyers miss critical issues because they don't know what to ask. ddPro asks everything.</h1>
-            <p class="hero-sub">Enter any U.S. property address on the right for an instant report covering title, market conditions, financials, property condition, safety, location, and investment analysis.</p>
+            <p class="hero-eyebrow">The pre-offer intelligence brief</p>
+            <h1>93% of buyers have regrets. Most missed something before they offered. ddPro finds it first.</h1>
+            <p class="hero-sub">Enter any U.S. property address to instantly surface your top risk flags and a full report covering title, market, financials, property condition, safety, location, and investment analysis — before you make an offer.</p>
           </div>
 
           <!-- Preview of the 3 category cards (neutral, shown before search) -->
@@ -94,6 +94,9 @@
 
         <!-- RESULTS SECTION -->
         <section id="results-section" class="results-section">
+
+          <!-- Red flags banner -->
+          <div id="red-flags-section"></div>
 
           <!-- Score card -->
           <div class="score-card">
@@ -227,7 +230,11 @@
     <!-- Footer -->
     <div id="page-footer" class="page-footer hidden">
       <p>All findings are estimated from public data and mock scoring. Verify all items with licensed professionals before making an offer.</p>
-      <button class="reset-btn" onclick="resetForm()">Analyze Another Property</button>
+      <div class="footer-actions">
+        <button class="print-btn" onclick="window.print()">Download as PDF</button>
+        <button class="share-btn" id="share-btn" onclick="copyShareLink()">Share Report</button>
+        <button class="reset-btn" onclick="resetForm()">Analyze Another Property</button>
+      </div>
     </div>
 
   </main>

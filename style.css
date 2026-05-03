@@ -260,4 +260,45 @@ main { max-width: 1060px; margin: 0 auto; padding: 14px 24px 0; }
   .factors-table td, .factors-table th { padding: 9px 12px; }
 }
 
+/* ============================================================ RED FLAGS BANNER */
+.red-flags-banner { background: #fff8f8; border: 1px solid rgba(185,28,28,0.2); border-left: 4px solid var(--red); box-shadow: var(--shadow); }
+.rf-head { padding: 10px 18px; border-bottom: 1px solid rgba(185,28,28,0.1); display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.rf-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--red); }
+.rf-sub { font-size: 11px; color: var(--muted); }
+.rf-items { padding: 2px 0; }
+.rf-item { display: flex; gap: 14px; padding: 11px 18px; border-bottom: 1px solid rgba(185,28,28,0.08); align-items: flex-start; }
+.rf-item:last-child { border-bottom: none; }
+.rf-num { flex-shrink: 0; width: 20px; height: 20px; background: var(--red); color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.rf-body { flex: 1; min-width: 0; }
+.rf-title { display: block; font-size: 12px; font-weight: 700; color: var(--red); margin-bottom: 3px; }
+.rf-detail { font-size: 12px; color: var(--text-2); line-height: 1.55; overflow-wrap: break-word; }
+.green-flags-banner { background: #f0fdf4; border: 1px solid rgba(21,128,61,0.2); border-left: 4px solid var(--green); padding: 13px 18px; box-shadow: var(--shadow); }
+.gf-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--green); display: block; margin-bottom: 4px; }
+.gf-text { font-size: 13px; color: var(--text-2); line-height: 1.5; }
+
+/* ============================================================ AGENT TIP (inside detail sections) */
+.ds-agent-tip { padding: 10px 18px; background: #f8f9ff; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-2); line-height: 1.55; overflow-wrap: break-word; }
+.dat-label { font-size: 9px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: var(--accent); display: inline-block; margin-right: 7px; }
+
+/* ============================================================ FOOTER ACTIONS (share / print / reset) */
+.footer-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.print-btn { background: var(--surface-2); border: 1px solid var(--border-2); color: var(--text-2); padding: 8px 14px; font-size: 12px; font-weight: 500; font-family: var(--font); cursor: pointer; transition: background 0.15s; white-space: nowrap; }
+.print-btn:hover { background: var(--border); }
+.share-btn { background: var(--accent); color: #fff; border: none; padding: 8px 14px; font-size: 12px; font-weight: 600; font-family: var(--font); cursor: pointer; transition: background 0.15s; white-space: nowrap; }
+.share-btn:hover { background: var(--accent-h); }
+
+/* ============================================================ PRINT / PDF EXPORT */
+@media print {
+  .site-header, .right-col, #map-section, .followup-wrap, .page-footer,
+  .loading-indicator, .pre-search { display: none !important; }
+  .main-grid { grid-template-columns: 1fr; }
+  main { padding: 0; }
+  body { background: white; font-size: 12px; }
+  .results-section { display: flex !important; }
+  .ds-section, .score-card, .factors-card, .category-card { break-inside: avoid; }
+  .categories-grid { grid-template-columns: repeat(3,1fr); }
+  .metrics-strip { grid-template-columns: repeat(5,1fr); }
+  .red-flags-banner, .green-flags-banner { break-inside: avoid; }
+}
+
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }

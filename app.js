@@ -1,4 +1,5 @@
 const API_URL = 'https://ddpro-production.up.railway.app';
+let currentAddress = '';
 
 // ============================================================
 // Seeded RNG (Mulberry32) — consistent results per address
@@ -141,7 +142,9 @@ function generateReport(data, address) {
   // Utilities & maintenance
   const moUtil  = ri(180, 350);
   const annMaint = Math.round(price * 0.01);
-  const moTotal = moPmt + moTax + hoaDues + moIns + moUtil;
+  const moTotal     = moPmt + moTax + hoaDues + moIns + moUtil;
+  const moMaint     = Math.round(annMaint / 12);
+  const moTrueTotal = moTotal + moMaint;
 
   // Market
   const dom          = good(mScore) ? ri(8,28) : med(mScore) ? ri(28,65) : ri(65,120);
@@ -180,6 +183,20 @@ function generateReport(data, address) {
   const exitEase     = good(score) ? 'Strong buyer demand — clean exit likely in 3–5 yrs' : med(score) ? 'Moderate — price at market or below to exit cleanly' : 'Challenging — multiple risk factors may limit buyer pool';
   const apprHist     = isHI ? '+5.8% avg annually (10-yr, Honolulu Board of Realtors)' : '+4.1% avg annually (10-yr, Case-Shiller)';
 
+  // Inspection priority
+  const ipFlags = [];
+  if (roofAge > 15)                      ipFlags.push(`roof (${roofAge} yr)`);
+  if (hvacAge > 12)                      ipFlags.push(`HVAC (${hvacAge} yr)`);
+  if (plumAge > 25)                      ipFlags.push(`plumbing (${plumAge} yr)`);
+  if (whAge > 10)                        ipFlags.push(`water heater (${whAge} yr)`);
+  if (wiringType.includes('Aluminum'))   ipFlags.push('electrical (aluminum)');
+  if (foundCond.includes('cracks'))      ipFlags.push('foundation (structural)');
+  const inspectionPriority = ipFlags.length === 0
+    ? { level: 'Standard',  text: 'Standard inspection — no urgent system concerns flagged' }
+    : ipFlags.length <= 2
+    ? { level: 'Elevated',  text: 'Elevated — flag for your inspector: ' + ipFlags.join(', ') }
+    : { level: 'High',      text: 'High priority — multiple systems: ' + ipFlags.join(', ') + '; add sewer scope + roof certification' };
+
   // Title
   const titleClear = score >= 60;
   const lienStatus = score >= 70 ? 'No liens detected in public record' : 'Possible lien — verify with title company before offer';
@@ -195,7 +212,7 @@ function generateReport(data, address) {
 
   return {
     price, fmtPrice, moPmt, moTax, annTax, hoaDues, hasHOA, moIns, annIns,
-    floodReq, annFloodIns, moUtil, annMaint, moTotal,
+    floodReq, annFloodIns, moUtil, annMaint, moTotal, moMaint, moTrueTotal, inspectionPriority,
     dom, priorSaleYr, priorSale, appreciation, motivation,
     roofAge, roofMat, roofLife, foundCond, plumAge, panelSize, wiringType, hvacAge, whAge, permitNote,
     floodZone, schoolRating, walkScore, hospDist, commuteMins, aqiAvg, crimeIndex, internet,
@@ -213,7 +230,7 @@ function generateReport(data, address) {
 function renderMetricsStrip(r) {
   const tiles = [
     { label: 'Est. Market Value',  value: r.fmtPrice,                                 sub: 'comparative estimate' },
-    { label: 'Total Monthly Cost', value: '$' + r.moTotal.toLocaleString(),           sub: 'mortgage+tax+ins+util' },
+    { label: 'True Monthly Cost',  value: '$' + r.moTrueTotal.toLocaleString(),        sub: 'incl. 1% maint. reserve' },
     { label: 'Days on Market',     value: r.dom + ' days',                            sub: 'est. for this market' },
     { label: 'Flood Zone',         value: r.floodZone.split(' ').slice(0,2).join(' '), sub: r.floodReq ? 'Ins. required' : 'Standard coverage' },
     { label: 'School District',    value: r.schoolRating + ' / 10',                   sub: 'estimated rating' },
@@ -237,13 +254,13 @@ function row(q, a, status) {
   return `<tr class="ds-row"><td class="ds-q">${q}</td><td class="ds-a">${a}</td><td class="ds-s">${badge(status, labels[status] || status)}</td></tr>`;
 }
 
-function section(title, items) {
+function section(title, items, tip) {
   return `<div class="ds-section">
   <div class="ds-head"><span class="ds-title">${title}</span><span class="ds-count">${items.length} checks</span></div>
   <table class="ds-table">
   <thead><tr><th>Check</th><th>Finding</th><th>Status</th></tr></thead>
   <tbody>${items.join('')}</tbody>
-  </table></div>`;
+  </table>${tip ? `<div class="ds-agent-tip"><span class="dat-label">Ask your agent</span>${escHtml(tip)}</div>` : ''}</div>`;
 }
 
 function renderDetailSections(r) {
@@ -258,7 +275,7 @@ function renderDetailSections(r) {
       row('Boundary survey accuracy',              'Professional survey recommended — confirm with title company', 'info'),
       row('Encroachments from neighbors',          'No visible encroachments reported — confirm at survey', 'info'),
       row('Easements affecting use',               'Utility easements typical — verify full title commitment report', 'info'),
-    ]),
+    ], 'Can you walk me through the preliminary title report and flag anything the seller should resolve before close?'),
 
     section('Market &amp; Pricing', [
       row('Current market value estimate',         r.fmtPrice + ' (comparative estimate)',  'info'),
@@ -267,7 +284,7 @@ function renderDetailSections(r) {
       row('Prior sale price &amp; date',           '$' + r.priorSale.toLocaleString() + ' in ' + r.priorSaleYr, 'info'),
       row('Appreciation since prior sale',         '+' + ap + '% — ' + (ap > 40 ? 'significant run-up; verify comps closely' : 'consistent with area trends'), ap > 40 ? 'warn' : 'ok'),
       row('Seller motivation level',               r.motivation, 'info'),
-    ]),
+    ], 'Show me the 3 most recently closed comps within 0.5 miles — is our offer price defensible if it comes in short at appraisal?'),
 
     section('Financial Planning', [
       row('Mortgage payment estimate',             '$' + r.moPmt.toLocaleString() + '/mo (30yr fixed, 20% down, ~7%)', 'info'),
@@ -278,9 +295,9 @@ function renderDetailSections(r) {
       row('Homeowners insurance estimate',         '$' + r.annIns.toLocaleString() + '/yr (est. 0.6% of value)', 'info'),
       row('Flood insurance requirement',           r.floodReq ? 'Required — est. $' + r.annFloodIns.toLocaleString() + '/yr (verify with lender)' : 'Not required for standard financing in this zone', r.floodReq ? 'warn' : 'ok'),
       row('Utility cost average',                  '$' + r.moUtil + '/mo estimated (electric, water, gas)', 'info'),
-      row('Maintenance estimate (annual)',          '$' + r.annMaint.toLocaleString() + '/yr (1% of value rule of thumb)', 'info'),
-      row('Total estimated monthly cost',          '$' + r.moTotal.toLocaleString() + '/mo all-in (excl. flood ins.)', 'info'),
-    ]),
+      row('Maintenance reserve (annual)',          '$' + r.annMaint.toLocaleString() + '/yr · $' + r.moMaint.toLocaleString() + '/mo (1% of value — industry standard)', 'warn'),
+      row('True monthly cost of ownership',       '$' + r.moTrueTotal.toLocaleString() + '/mo all-in (mortgage + tax + ins + util + maintenance reserve)', 'info'),
+    ], 'What are my total closing costs beyond the down payment, and what are sellers in this market typically willing to cover?'),
 
     section('Property Condition', [
       row('Roof age &amp; condition',              r.roofAge + ' years · ' + r.roofMat, r.roofAge < 10 ? 'ok' : r.roofAge < 20 ? 'info' : 'warn'),
@@ -291,7 +308,8 @@ function renderDetailSections(r) {
       row('HVAC system age',                       r.hvacAge + ' years estimated', r.hvacAge < 8 ? 'ok' : r.hvacAge < 15 ? 'info' : 'warn'),
       row('Water heater age',                      r.whAge + ' years estimated', r.whAge < 6 ? 'ok' : r.whAge < 12 ? 'info' : 'warn'),
       row('Permit history for renovations',        r.permitNote, r.permitNote.includes('No open') ? 'ok' : 'warn'),
-    ]),
+      row('Inspection priority',                   r.inspectionPriority.text, r.inspectionPriority.level === 'Standard' ? 'ok' : r.inspectionPriority.level === 'Elevated' ? 'warn' : 'alert'),
+    ], 'Which items from the inspection would you prioritize for a price negotiation, and which would cause you to recommend walking away?'),
 
     section('Safety &amp; Natural Hazards', [
       row('Flood risk',                            r.floodZone, r.floodReq ? 'warn' : 'ok'),
@@ -302,7 +320,7 @@ function renderDetailSections(r) {
       row('Crime index',                           r.crimeIndex, r.crimeIndex.includes('Low') ? 'ok' : r.crimeIndex.includes('Moderate') ? 'info' : 'warn'),
       row('Air quality index (avg)',               'AQI ~' + r.aqiAvg + ' — ' + (r.aqiAvg < 50 ? 'Good' : r.aqiAvg < 100 ? 'Moderate' : 'Unhealthy for sensitive groups'), r.aqiAvg < 50 ? 'ok' : r.aqiAvg < 100 ? 'info' : 'warn'),
       row('Smoke &amp; CO detectors',             'Required by law — verify installed and operational at inspection', 'info'),
-    ]),
+    ], 'Are there any insurers currently declining to write policies in this neighborhood, and would that affect my financing?'),
 
     section('Location &amp; Neighborhood', [
       row('School district rating',                r.schoolRating + ' / 10 (estimated) — verify at GreatSchools.org', r.schoolRating >= 7 ? 'ok' : r.schoolRating >= 5 ? 'info' : 'warn'),
@@ -313,7 +331,7 @@ function renderDetailSections(r) {
       row('Pest pressure in area',                 r.isHI ? 'High — drywood &amp; subterranean termites, centipedes common; schedule pest inspection' : 'Moderate — order pest inspection separately', r.isHI ? 'warn' : 'info'),
       row('Water quality',                         'Check local water quality report at EWG.org/tapwater or EPA.gov', 'info'),
       row('Noise exposure',                        'Verify airport flight paths, highway proximity, and train routes at this address before offer', 'info'),
-    ]),
+    ], 'Is this neighborhood trending up or down over the last 2 years, and what is the single biggest factor driving values here?'),
 
     section('Investment Analysis', [
       row('Estimated monthly rent',                '$' + r.moRent.toLocaleString() + '/mo unfurnished long-term (estimated)', 'info'),
@@ -324,9 +342,40 @@ function renderDetailSections(r) {
       row('Exit strategy ease (3–5 yr)',           r.exitEase, r.exitEase.includes('Strong') ? 'ok' : r.exitEase.includes('Moderate') ? 'info' : 'warn'),
       row('Short-term rental legality',            r.isHI ? 'Restricted — STR permits severely limited in most Hawaii counties; verify before purchase' : 'Verify local STR ordinances before purchase — regulations vary widely', r.isHI ? 'warn' : 'info'),
       row('HOA rental restrictions',               r.hasHOA ? 'Verify rental cap and STR prohibition in CC&Rs before offer' : 'No HOA — no rental restrictions from HOA', r.hasHOA ? 'warn' : 'ok'),
-    ]),
+    ], 'What is the realistic resale timeline and buyer pool size if I need to exit this property within 3 to 5 years?'),
 
   ].join('');
+}
+
+// ============================================================
+// Red flag computation — returns top 3 by severity
+// ============================================================
+
+function computeRedFlags(r) {
+  const flags = [];
+  if (r.foundCond.includes('cracks'))
+    flags.push({ sev: 5, title: 'Foundation: Structural Concerns', detail: 'Structural cracks detected. A licensed structural engineer report is required before making any offer.' });
+  if (!r.titleClear)
+    flags.push({ sev: 5, title: 'Title: Ownership Dispute Risk', detail: 'Potential disputes found in public record. A title search is required before submitting any offer.' });
+  if (r.lienStatus.includes('Possible lien'))
+    flags.push({ sev: 4, title: 'Possible Lien on Title', detail: r.lienStatus + ' Liens transfer to new owner at closing — verify with your title company before offer.' });
+  if (r.roofLife < 5)
+    flags.push({ sev: 4, title: 'Roof End-of-Life', detail: `Roof at ${r.roofAge} yrs (${r.roofMat}) with ~${r.roofLife} yr remaining. Budget $12,000–$25,000 for replacement or negotiate a closing credit.` });
+  if (r.wiringType.includes('Aluminum'))
+    flags.push({ sev: 3, title: 'Aluminum Wiring Detected', detail: 'Pre-1972 aluminum wiring is a known fire risk. Verify condition with a licensed electrician and confirm insurance eligibility before offer.' });
+  if (r.floodReq)
+    flags.push({ sev: 3, title: 'Flood Zone — Insurance Required', detail: `${r.floodZone}. Mandatory flood insurance adds an estimated $${r.annFloodIns.toLocaleString()}/yr. Confirm full cost with your lender before committing.` });
+  if (r.permitNote.includes('Verify'))
+    flags.push({ sev: 3, title: 'Permit History Unclear', detail: 'Possible unpermitted additions. Verify all structures with the county permit database — buyers inherit unpermitted work liability.' });
+  if (r.appreciation > 40)
+    flags.push({ sev: 2, title: `Price Up ${r.appreciation}% Since ${r.priorSaleYr}`, detail: 'Significant appreciation may reflect run-up above current value. Verify pricing against 3 recently closed comps within 0.5 miles before offering.' });
+  if (r.hvacAge > 15)
+    flags.push({ sev: 2, title: `HVAC System: ${r.hvacAge} Years Old`, detail: `Past typical service life of 15 years. Budget $8,000–$15,000 for replacement or negotiate a closing credit.` });
+  if (r.crimeIndex.includes('Above average'))
+    flags.push({ sev: 2, title: 'Above-Average Crime Index', detail: 'Crime is above city average for this location. Verify current conditions with the local police district before offer.' });
+  if (r.hasHOA && r.hoaDues > 600)
+    flags.push({ sev: 1, title: `High HOA: $${r.hoaDues}/mo`, detail: 'HOA dues above $600/mo meaningfully reduce the buyer pool and long-term resale demand. Factor into exit strategy.' });
+  return flags.sort((a, b) => b.sev - a.sev).slice(0, 3);
 }
 
 // ============================================================
@@ -570,6 +619,19 @@ function renderResults(data, address) {
   const sc = scoreColor(data.riskScore);
   const r  = generateReport(data, address);
 
+  // Update URL for sharing (pre-fills address on reload)
+  currentAddress = address;
+  history.pushState({}, '', `?address=${encodeURIComponent(address)}`);
+
+  // Red flags banner
+  const flags = computeRedFlags(r);
+  const rfEl  = document.getElementById('red-flags-section');
+  if (flags.length === 0) {
+    rfEl.innerHTML = `<div class="green-flags-banner"><span class="gf-label">No Critical Concerns Identified</span><span class="gf-text">This property scored well across all major risk categories. Standard contingencies and a full inspection still apply.</span></div>`;
+  } else {
+    rfEl.innerHTML = `<div class="red-flags-banner"><div class="rf-head"><span class="rf-label">Top ${flags.length} Concern${flags.length > 1 ? 's' : ''} — Verify Before Offering</span><span class="rf-sub">These findings require action before you submit an offer</span></div><div class="rf-items">${flags.map((f, i) => `<div class="rf-item"><span class="rf-num">${i + 1}</span><div class="rf-body"><span class="rf-title">${escHtml(f.title)}</span><span class="rf-detail">${escHtml(f.detail)}</span></div></div>`).join('')}</div></div>`;
+  }
+
   // Score card
   document.getElementById('gauge-container').innerHTML = buildGaugeSVG(data.riskScore);
   const badge = document.getElementById('score-badge');
@@ -666,6 +728,19 @@ async function handleAnalyze() {
   }
 }
 
+function copyShareLink() {
+  const url = window.location.href;
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById('share-btn');
+    if (!btn) return;
+    const orig = btn.textContent;
+    btn.textContent = 'Link copied!';
+    setTimeout(() => { btn.textContent = orig; }, 2000);
+  }).catch(() => {
+    prompt('Copy this report link:', url);
+  });
+}
+
 function resetForm() {
   document.getElementById('address-input').value = '';
   document.getElementById('results-section').classList.remove('visible');
@@ -674,11 +749,19 @@ function resetForm() {
   document.getElementById('page-footer').classList.add('hidden');
   document.getElementById('action-guide').classList.add('hidden');
   document.getElementById('buyer-checklist').classList.remove('hidden');
+  document.getElementById('red-flags-section').innerHTML = '';
   clearError();
+  history.replaceState({}, '', window.location.pathname);
   document.getElementById('address-input').focus();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 document.getElementById('address-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') handleAnalyze();
+});
+
+// Pre-fill address from shared URL (?address=...)
+window.addEventListener('DOMContentLoaded', () => {
+  const addr = new URLSearchParams(window.location.search).get('address');
+  if (addr) document.getElementById('address-input').value = addr;
 });
