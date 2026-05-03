@@ -269,8 +269,8 @@ function renderDetailSections(r) {
   return [
 
     section('Title &amp; Legal', [
-      row('Clear title, no ownership disputes',    r.titleClear ? 'No disputes found in public record' : 'Disputes possible — title search required before offer', r.titleClear ? 'ok' : 'warn'),
-      row('Existing liens or unpaid debts',        r.lienStatus, r.titleClear ? 'ok' : 'warn'),
+      row('Clear title, no ownership disputes',    'Title search required — order from your title company before closing', 'info'),
+      row('Existing liens or unpaid debts',        'Verify with county recorder and title company — not available without real public records data', 'info'),
       row('Property legal description',            'Verify matches listing with county recorder before closing', 'info'),
       row('Boundary survey accuracy',              'Professional survey recommended — confirm with title company', 'info'),
       row('Encroachments from neighbors',          'No visible encroachments reported — confirm at survey', 'info'),
@@ -355,10 +355,6 @@ function computeRedFlags(r) {
   const flags = [];
   if (r.foundCond.includes('cracks'))
     flags.push({ sev: 5, title: 'Foundation: Structural Concerns', detail: 'Structural cracks detected. A licensed structural engineer report is required before making any offer.', link: 'https://www.ashi.org/', linkLabel: 'Find a home inspector (ASHI)' });
-  if (!r.titleClear)
-    flags.push({ sev: 5, title: 'Title: Ownership Dispute Risk', detail: 'Potential disputes found in public record. A title search is required before submitting any offer.', link: 'https://www.alta.org/', linkLabel: 'About title insurance (ALTA)' });
-  if (r.lienStatus.includes('Possible lien'))
-    flags.push({ sev: 4, title: 'Possible Lien on Title', detail: r.lienStatus + ' Liens transfer to new owner at closing — verify with your title company before offer.', link: 'https://www.alta.org/', linkLabel: 'About title insurance (ALTA)' });
   if (r.roofLife < 5)
     flags.push({ sev: 4, title: 'Roof End-of-Life', detail: `Roof at ${r.roofAge} yrs (${r.roofMat}) with ~${r.roofLife} yr remaining. Budget $12,000–$25,000 for replacement or negotiate a closing credit.`, link: 'https://www.nrca.net/', linkLabel: 'Roofing guidance (NRCA)' });
   if (r.wiringType.includes('Aluminum'))
